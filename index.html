@@ -32,13 +32,8 @@
   <section id="configPanel" class="hidden max-w-5xl mx-auto px-4 mt-4">
     <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl space-y-4">
       <div class="flex items-center justify-between gap-3"><h2 class="text-base font-bold">Configuración</h2><button onclick="closeConfig()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3 py-2 rounded-lg font-bold cursor-pointer">Cerrar</button></div>
-      <p class="text-xs text-slate-400">Zona protegida. La clave de Gemini no se muestra ni se guarda en el navegador; queda protegida en Supabase Edge Function.</p>
-      <div class="grid gap-3">
-        <input id="supabaseUrlInput" class="bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm" placeholder="Supabase URL: https://xxxxx.supabase.co" />
-        <input id="supabaseAnonInput" class="bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm" placeholder="Supabase anon public key" />
-      </div>
+      <p class="text-xs text-slate-400">Zona protegida. La conexión de Supabase ya debe venir configurada en el archivo index.html. La clave de Gemini no se muestra ni se guarda en el navegador; queda protegida en Supabase Edge Function.</p>
       <div class="flex flex-wrap gap-2">
-        <button onclick="saveConfig()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold cursor-pointer">Guardar</button>
         <button onclick="testSupabase()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold cursor-pointer">Probar Supabase</button>
         <button onclick="testGeminiFunction()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold cursor-pointer">Probar IA segura</button>
       </div>
@@ -113,6 +108,12 @@
   </footer>
 
 <script>
+// CONFIGURACIÓN PÚBLICA DE SUPABASE
+// La anon key de Supabase puede estar en el frontend.
+// NO pongas aquí la API Key de Gemini: esa sigue protegida en la Edge Function.
+const SUPABASE_URL = 'https://awaqyhjthzbtbrzjbqsc.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_zoLfbj8pzs2_x8ThlOl-FA_LMu4P_e_';
+
 let supabaseClient = null;
 let sessionReused = 0;
 let sessionAI = 0;
@@ -146,20 +147,19 @@ function closeConfig(){ document.getElementById('configPanel').classList.add('hi
 function toggleConfig(){ openConfigSecure(); }
 
 function loadConfig(){
-  document.getElementById('supabaseUrlInput').value = localStorage.getItem('dmr_supabase_url') || '';
-  document.getElementById('supabaseAnonInput').value = localStorage.getItem('dmr_supabase_anon') || '';
-}
-function saveConfig(){
-  localStorage.setItem('dmr_supabase_url', document.getElementById('supabaseUrlInput').value.trim());
-  localStorage.setItem('dmr_supabase_anon', document.getElementById('supabaseAnonInput').value.trim());
-  initSupabase();
-  showConfigStatus('✅ Configuración guardada en este navegador.', false);
-  cargarCasos();
+  // La app pública no pide configuración al usuario.
+  // Usa los valores fijos de SUPABASE_URL y SUPABASE_ANON_KEY.
 }
 function initSupabase(){
-  const url = localStorage.getItem('dmr_supabase_url');
-  const anon = localStorage.getItem('dmr_supabase_anon');
-  if(url && anon){ supabaseClient = supabase.createClient(url, anon); }
+  const url = SUPABASE_URL;
+  const anon = SUPABASE_ANON_KEY;
+  const configured = url && anon && !url.includes('PEGA_AQUI') && !anon.includes('PEGA_AQUI');
+  if(configured){
+    supabaseClient = supabase.createClient(url, anon);
+  } else {
+    supabaseClient = null;
+    console.warn('Supabase no está configurado. Edita SUPABASE_URL y SUPABASE_ANON_KEY en index.html.');
+  }
 }
 async function testSupabase(){
   if(!supabaseClient){ showConfigStatus('Faltan URL o anon key de Supabase.', true); return; }
@@ -235,7 +235,7 @@ function searchableCaseText(item){
 async function procesarConsulta(){
   const pregunta = document.getElementById('buloInput').value.trim();
   if(!pregunta){ alert('Escribe primero el bulo o argumento.'); return; }
-  if(!supabaseClient){ showStatus('Configura Supabase antes de usar la app.', 'error'); openConfigSecure(); return; }
+  if(!supabaseClient){ showStatus('La conexión con Supabase no está configurada en el index.html.', 'error'); openConfigSecure(); return; }
 
   limpiarResultado(false);
   showStatus('Buscando en la base de conocimiento...', 'info');
@@ -348,7 +348,7 @@ function updateStats(){ document.getElementById('totalReutilizados').textContent
 
 async function cargarCasos(){
   const grid = document.getElementById('casesGrid');
-  if(!supabaseClient){ grid.innerHTML = '<div class="text-slate-500 text-sm">Configura Supabase para ver casos.</div>'; return; }
+  if(!supabaseClient){ grid.innerHTML = '<div class="text-slate-500 text-sm">Conexión no configurada. Revisa SUPABASE_URL y SUPABASE_ANON_KEY en index.html.</div>'; return; }
 
   const { count } = await supabaseClient.from('dmr_cases').select('*', { count:'exact', head:true });
   if(typeof count === 'number') document.getElementById('totalCasos').textContent = count;
