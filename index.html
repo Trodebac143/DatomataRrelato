@@ -6,7 +6,6 @@
     <title>DatoMataRelato - Resistencia Digital</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
-        /* Estilos para el efecto de volteo de las tarjetas Mito vs Dato */
         .flip-card { perspective: 1000px; background-color: transparent; }
         .flip-card-inner { transition: transform 0.6s; transform-style: preserve-3d; }
         .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
@@ -20,7 +19,7 @@
         <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center gap-3">
                 <span class="text-2xl font-black tracking-tighter text-red-600">Dato<span class="text-slate-100">MataRelato</span></span>
-                <span class="bg-red-950/50 text-red-400 text-xs px-2 py-0.5 rounded-full border border-red-900/50 font-mono">v1.1</span>
+                <span class="bg-red-950/50 text-red-400 text-xs px-2 py-0.5 rounded-full border border-red-900/50 font-mono">v1.2</span>
             </div>
             <button onclick="toggleConfig()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 cursor-pointer">
                 ⚙️ Ajustes API
@@ -31,7 +30,7 @@
     <div id="configPanel" class="hidden max-w-6xl mx-auto px-4 mt-4">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
             <h3 class="text-lg font-bold text-slate-200 mb-2">🔑 Configuración del Motor IA (Gratuito)</h3>
-            <p class="text-sm text-slate-400 mb-4">Para usar el Generador de Contra-argumentos sin gastar dinero, introduce tu API Key gratuita de Google AI Studio. Se guardará de forma local en tu navegador.</p>
+            <p class="text-sm text-slate-400 mb-4">Introduce tu API Key de Google AI Studio para activar el sistema.</p>
             <div class="flex gap-3">
                 <input type="password" id="apiKeyInput" placeholder="Pega aquí tu clave AIzaSy..." class="bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm w-full focus:outline-none focus:border-red-500 text-slate-200">
                 <button onclick="saveApiKey()" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition shrink-0 cursor-pointer">Guardar Clave</button>
@@ -44,22 +43,22 @@
 
         <section class="text-center space-y-4 max-w-3xl mx-auto py-4">
             <h1 class="text-4xl md:text-5xl font-black tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">Desmontando la máquina del fango</h1>
-            <p class="text-lg text-slate-400">Datos objetivos y contrastados frente a los bulos mediáticos para desestabilizar al Gobierno. Datos matan relato.</p>
+            <p class="text-lg text-slate-400">Datos objetivos frente a los bulos mediáticos para desestabilizar al Gobierno. Datos matan relato.</p>
         </section>
 
-        <section class="bg-gradient-to-b from-slate-900 to-slate-900/60 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl">
-            <div class="flex items-center gap-3 mb-6">
+        <section class="bg-gradient-to-b from-slate-900 to-slate-900/60 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl space-y-6">
+            <div class="flex items-center gap-3">
                 <div class="bg-red-950 p-2.5 rounded-xl border border-red-900/50 text-xl">🤖</div>
                 <div>
                     <h2 class="text-xl font-extrabold text-white">Generador de Contra-Argumentos con IA</h2>
-                    <p class="text-sm text-slate-400">Introduce una mentira o ataque y la IA redactará una réplica blindada con datos oficiales.</p>
+                    <p class="text-sm text-slate-400">Introduce un ataque y la IA redactará una réplica estructurada con datos oficiales.</p>
                 </div>
             </div>
 
             <div class="grid md:grid-cols-3 gap-6">
                 <div class="md:col-span-2 space-y-4">
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-400">Bulo o narrativa detectada en medios/redes:</label>
-                    <textarea id="buloInput" rows="4" placeholder="Ej: 'España está en quiebra técnica y destruyendo todo el empleo...'" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-red-500 transition resize-none"></textarea>
+                    <textarea id="buloInput" rows="4" placeholder="Ej: 'España está destruyendo todo el empleo...'" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-red-500 transition resize-none"></textarea>
                     
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         <button onclick="setTone('bar')" id="btn-bar" class="tone-btn bg-slate-950 border border-slate-800 text-slate-400 px-3 py-2.5 rounded-xl text-xs font-bold transition uppercase cursor-pointer">🍻 Debate de bar</button>
@@ -71,8 +70,8 @@
 
                 <div class="flex flex-col justify-between bg-slate-950/50 border border-slate-800/60 rounded-2xl p-5">
                     <div class="space-y-2">
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Instrucciones de uso</h4>
-                        <p class="text-xs text-slate-500 leading-relaxed">1. Recuerda rellenar tus Ajustes de API arriba para activar la IA.<br>2. Selecciona un formato (X, WhatsApp...).<br>3. Haz clic en el botón rojo.</p>
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Asistente de actualización</h4>
+                        <p class="text-xs text-slate-500 leading-relaxed">Ahora, al demoler el bulo, la IA creará automáticamente un bloque resumido abajo para que lo pegues en tu Google Sheets en un segundo.</p>
                     </div>
                     <button onclick="generarRespuesta()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 px-4 rounded-xl transition shadow-lg shadow-red-950/20 mt-6 md:mt-0 cursor-pointer flex items-center justify-center gap-2">
                         <span>🚀 Demoler Bulo</span>
@@ -80,9 +79,37 @@
                 </div>
             </div>
 
-            <div id="resultadoIA" class="hidden mt-6 bg-slate-950 border border-slate-800 rounded-2xl p-5 relative">
-                <div class="absolute top-4 right-4 bg-red-950/40 text-red-400 border border-red-900/40 text-[10px] font-mono uppercase px-2 py-0.5 rounded">Respuesta Generada</div>
+            <div id="resultadoIA" class="hidden bg-slate-950 border border-slate-800 rounded-2xl p-5 relative">
+                <div class="absolute top-4 right-4 bg-red-950/40 text-red-400 border border-red-900/40 text-[10px] font-mono uppercase px-2 py-0.5 rounded">Respuesta de Campaña</div>
                 <div id="textoIA" class="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed"></div>
+            </div>
+
+            <div id="hojaAutomaticaBox" class="hidden bg-slate-900/40 border border-dashed border-slate-700 rounded-2xl p-5 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <h4 class="text-sm font-bold text-emerald-400 flex items-center gap-2">📋 Bloque Sugerido para tu Mesa de Desmentidos</h4>
+                    <button onclick="copiarFilaExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1">
+                        <span>📥 Copiar fila entera</span>
+                    </button>
+                </div>
+                <div class="grid sm:grid-cols-4 gap-3 text-xs">
+                    <div>
+                        <label class="block text-slate-500 font-bold uppercase mb-1">Categoría</label>
+                        <input type="text" id="sheetCat" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-300">
+                    </div>
+                    <div>
+                        <label class="block text-slate-500 font-bold uppercase mb-1">Mito (Bulo)</label>
+                        <input type="text" id="sheetMito" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-300">
+                    </div>
+                    <div>
+                        <label class="block text-slate-500 font-bold uppercase mb-1">Dato (Resumen Realidad)</label>
+                        <input type="text" id="sheetDato" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-300">
+                    </div>
+                    <div>
+                        <label class="block text-slate-500 font-bold uppercase mb-1">Fuente sugerida</label>
+                        <input type="text" id="sheetFuente" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-300">
+                    </div>
+                </div>
+                <p class="text-[11px] text-slate-500">💡 <strong>¿Cómo usarlo?</strong> Modifica lo que quieras en las cajas de arriba si es necesario, dale al botón verde de "Copiar fila entera", ve a tu Google Sheets, haz clic en la celda vacía de la izquierda y dale a pegar. ¡Se rellenarán las 4 columnas de golpe!</p>
             </div>
         </section>
 
@@ -92,7 +119,7 @@
                     <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 text-xl">🛡️</div>
                     <div>
                         <h2 class="text-xl font-extrabold text-white">Mesa de Desmentidos Directos</h2>
-                        <p class="text-sm text-slate-400">Datos actualizados directamente desde tu panel de control de Google Drive.</p>
+                        <p class="text-sm text-slate-400">Datos consolidados desde tu panel de control.</p>
                     </div>
                 </div>
                 <div id="categoryFilters" class="flex flex-wrap gap-1.5">
@@ -112,23 +139,19 @@
     </footer>
 
     <script>
-        // CONFIGURACIÓN CLAVE: PEGA AQUÍ TU ID DE GOOGLE SHEETS
         const SPREADSHEET_ID = '1AgecAzjzg6H1G-EdHMLM4xNvrhlIf1vnFM2eSBrLw3o';
-        
         let currentTone = 'bar';
         let allData = [];
 
-        // Inicializar al cargar la página
         window.onload = function() {
             checkStoredApiKey();
             loadSheetsData();
             setTone('bar');
         };
 
-        // Cargar los datos desde Google Sheets de forma No-Code
         async function loadSheetsData() {
             if(SPREADSHEET_ID === 'TU_ID_DE_GOOGLE_SHEETS_AQUÍ') {
-                document.getElementById('cardsGrid').innerHTML = `<div class="col-span-full bg-amber-950/20 border border-amber-900/50 text-amber-400 p-4 rounded-xl text-sm">⚠️ <strong>Configuración pendiente:</strong> Debes abrir el archivo HTML con un editor y sustituir <code>TU_ID_DE_GOOGLE_SHEETS_AQUÍ</code> por el ID real de tu hoja de cálculo.</div>`;
+                document.getElementById('cardsGrid').innerHTML = `<div class="col-span-full bg-amber-950/20 border border-amber-900/50 text-amber-400 p-4 rounded-xl text-sm">⚠️ <strong>Configuración pendiente:</strong> Modifica el archivo HTML e introduce tu SPREADSHEET_ID.</div>`;
                 return;
             }
             const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv`;
@@ -137,12 +160,10 @@
                 const csvText = await response.text();
                 parseAndRenderCSV(csvText);
             } catch (error) {
-                console.error(error);
-                document.getElementById('cardsGrid').innerHTML = `<div class="col-span-full text-red-400 text-sm">Error al conectar con Google Sheets. Asegúrate de haber hecho la hoja pública en modo "Lector".</div>`;
+                document.getElementById('cardsGrid').innerHTML = `<div class="col-span-full text-red-400 text-sm">Error al conectar con Google Sheets. Asegúrate de que es pública.</div>`;
             }
         }
 
-        // Procesar los datos del CSV
         function parseAndRenderCSV(csvText) {
             const lines = csvText.split('\n');
             const data = [];
@@ -150,18 +171,11 @@
 
             for(let i = 1; i < lines.length; i++) {
                 if(!lines[i].trim()) continue;
-                
                 const matches = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
                 const cleanCells = matches.map(cell => cell.replace(/^"|"$/g, '').trim());
 
                 if(cleanCells.length >= 4) {
-                    const row = {
-                        categoria: cleanCells[0],
-                        mito: cleanCells[1],
-                        dato: cleanCells[2],
-                        fuente: cleanCells[3]
-                    };
-                    data.push(row);
+                    data.push({ categoria: cleanCells[0], mito: cleanCells[1], dato: cleanCells[2], fuente: cleanCells[3] });
                     categories.add(cleanCells[0]);
                 }
             }
@@ -171,7 +185,6 @@
             renderCards(allData);
         }
 
-        // Pintar botones de categorías
         function renderFilters(categories) {
             const container = document.getElementById('categoryFilters');
             container.innerHTML = `<button onclick="filterCards('todos')" class="filter-btn bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition cursor-pointer">Todos</button>`;
@@ -180,73 +193,50 @@
             });
         }
 
-        // Pintar las tarjetas de Mito vs Dato
         function renderCards(data) {
             const grid = document.getElementById('cardsGrid');
             if(data.length === 0) {
-                grid.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500">No hay desmentidos registrados en esta categoría aún.</div>`;
+                grid.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500">No hay desmentidos.</div>`;
                 return;
             }
-
             grid.innerHTML = '';
             data.forEach((item, index) => {
                 grid.innerHTML += `
                     <div class="flip-card h-64 cursor-pointer" id="card-${index}" onclick="this.classList.toggle('flipped')">
                         <div class="flip-card-inner relative w-full h-full transition-transform duration-500 rounded-2xl shadow-lg">
-                            
-                            <div class="flip-card-front absolute w-full h-full bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between overflow-hidden">
+                            <div class="flip-card-front absolute w-full h-full bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
                                 <div class="space-y-3">
                                     <div class="flex justify-between items-center">
                                         <span class="text-[10px] uppercase font-black tracking-wider bg-red-950 text-red-400 px-2 py-0.5 rounded border border-red-900/40">${item.categoria}</span>
                                         <span class="text-xs text-red-500 font-bold">❌ Bulo</span>
                                     </div>
                                     <p class="text-sm font-semibold text-slate-200 leading-snug">"${item.mito}"</p>
-                                </div>
-                                <div class="text-right text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center justify-end gap-1">
-                                    Voltear para ver dato 🔄
-                                </div>
+                                        </div>
+                                <div class="text-right text-[11px] font-bold text-slate-500">Voltear para ver dato 🔄</div>
                             </div>
-
-                            <div class="flip-card-back absolute w-full h-full bg-gradient-to-br from-slate-900 to-red-950/20 border border-emerald-900/60 rounded-2xl p-5 flex flex-col justify-between overflow-hidden">
-                                <div class="space-y-2 overflow-y-auto pr-1">
+                            <div class="flip-card-back absolute w-full h-full bg-gradient-to-br from-slate-900 to-red-950/20 border border-emerald-900/60 rounded-2xl p-5 flex flex-col justify-between">
+                                <div class="space-y-2 overflow-y-auto">
                                     <div class="flex justify-between items-center">
                                         <span class="text-[10px] uppercase font-black tracking-wider bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded border border-emerald-900/40">Realidad</span>
                                         <span class="text-xs text-emerald-400 font-bold">✅ Hecho</span>
                                     </div>
                                     <p class="text-xs text-slate-300 leading-relaxed">${item.dato}</p>
                                 </div>
-                                <div class="border-t border-slate-800/80 pt-2 flex justify-between items-center mt-2">
-                                    <span class="text-[10px] text-slate-400 font-medium truncate max-w-[70%]">📊 Fuente: <strong>${item.fuente}</strong></span>
+                                <div class="border-t border-slate-800/80 pt-2 flex justify-between items-center">
+                                    <span class="text-[10px] text-slate-400 truncate max-w-[70%]">📊 Fuente: <strong>${item.fuente}</strong></span>
                                     <span class="text-[10px] font-bold text-emerald-500 uppercase">Verificado</span>
                                 </div>
                             </div>
-
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
         }
 
-        // Filtrar tarjetas por categoría
         function filterCards(cat) {
-            const buttons = document.querySelectorAll('.filter-btn');
-            buttons.forEach(btn => {
-                if(btn.textContent.toLowerCase() === cat.toLowerCase() || (cat === 'todos' && btn.textContent === 'Todos')) {
-                    btn.className = "filter-btn bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition cursor-pointer";
-                } else {
-                    btn.className = "filter-btn bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs font-bold px-3 py-1.5 rounded-lg transition cursor-pointer";
-                }
-            });
-
-            if(cat === 'todos') {
-                renderCards(allData);
-            } else {
-                const filtered = allData.filter(item => item.categoria.toLowerCase() === cat.toLowerCase());
-                renderCards(filtered);
-            }
+            if(cat === 'todos') { renderCards(allData); } 
+            else { renderCards(allData.filter(item => item.categoria.toLowerCase() === cat.toLowerCase())); }
         }
 
-        // LÓGICA DE TONOS PARA LA IA
         function setTone(tone) {
             currentTone = tone;
             document.querySelectorAll('.tone-btn').forEach(btn => {
@@ -255,85 +245,90 @@
             document.getElementById(`btn-${tone}`).className = "tone-btn bg-red-950 border border-red-700 text-red-400 px-3 py-2.5 rounded-xl text-xs font-bold transition uppercase cursor-pointer";
         }
 
-        // ENVIAR PETICIÓN A GEMINI 2.5 FLASH SIN COSTES
         async function generarRespuesta() {
             const apiKey = localStorage.getItem('gemini_api_key');
             const bulo = document.getElementById('buloInput').value.trim();
             
-            if(!apiKey) {
-                alert('⚠️ Por favor, introduce primero tu API Key gratuita en el botón de "Ajustes API" arriba a la derecha.');
-                toggleConfig();
-                return;
-            }
-            if(!bulo) {
-                alert('Por favor, escribe el bulo o ataque que quieres desmontar.');
-                return;
-            }
+            if(!apiKey) { alert('⚠️ Introduce primero tu API Key en "Ajustes API".'); toggleConfig(); return; }
+            if(!bulo) { alert('Por favor, escribe el bulo.'); return; }
 
             const resultadoBox = document.getElementById('resultadoIA');
             const textoBox = document.getElementById('textoIA');
+            const sheetBox = document.getElementById('hojaAutomaticaBox');
             
             resultadoBox.classList.remove('hidden');
-            textoBox.innerHTML = `<span class="animate-pulse text-slate-500">Anatematizando el relato falaz... Conectando con Gemini...</span>`;
+            sheetBox.classList.add('hidden');
+            textoBox.innerHTML = `<span class="animate-pulse text-slate-500">Procesando y deconstruyendo el relato con Gemini...</span>`;
 
             let promptEnfoque = "";
-            if(currentTone === 'bar') promptEnfoque = "un formato pedagógico, directo y sencillo ideal para una conversación informal en un bar o una cena familiar, usando metáforas claras y sin tecnicismos complejos.";
-            if(currentTone === 'twitter') promptEnfoque = "un hilo de X (Twitter) con ganchos potentes, frases cortas e impactantes, datos clave al grano y hashtags estratégicos.";
-            if(currentTone === 'whatsapp') promptEnfoque = "un mensaje directo de WhatsApp estructurado con viñetas claras, párrafos cortos y emojis amigables, diseñado específicamente para ser copiado y reenviado masivamente en grupos.";
-            if(currentTone === 'prensa') promptEnfoque = "una nota de prensa institucional y argumentario político formal, con lenguaje técnico, riguroso y tono de estado.";
+            if(currentTone === 'bar') promptEnfoque = "un formato pedagógico, directo y sencillo ideal para debatir en un bar o cena familiar.";
+            if(currentTone === 'twitter') promptEnfoque = "un hilo de X (Twitter) con frases cortas y ganchos directos.";
+            if(currentTone === 'whatsapp') promptEnfoque = "un mensaje de WhatsApp estructurado con viñetas y emojis listo para reenviar.";
+            if(currentTone === 'prensa') promptEnfoque = "una nota de prensa institucional formal.";
 
-            const promptFinal = `Actúas como un experto analista de comunicación del Partido Socialista. Te acaban de presentar el siguiente bulo o narrativa malintencionada que busca erosionar al actual Gobierno de España: "${bulo}". Redacta un contra-argumento demoledor, basado exclusivamente en la defensa activa con datos reales, transparentes y objetivos. Utiliza ${promptEnfoque}. Desmonta las trampas discursivas de la derecha de forma contundente y pedagógica. No te inventes datos específicos si no los tienes, apóyate en las realidades consolidadas (empleo récord, SMI, avances sociales).`;
+            // Pedimos a la IA la respuesta y ADEMÁS la estructura limpia para separar los campos de forma infalible
+            const promptFinal = `Actúas como analista de comunicación del Partido Socialista. Te presentan este bulo: "${bulo}". 
+            Primero, redacta un contra-argumento demoledor usando ${promptEnfoque}.
+            Segundo, al final de todo el texto, añade obligatoriamente la etiqueta [ESTRUCTURA_SHEETS] y en la línea de abajo escribe la información reducida en formato JSON con la siguiente estructura exacta para añadirla a un catálogo:
+            {"categoria": "Economía o Empleo o Social o Institucional", "mito": "Resumen muy breve del bulo", "dato": "Resumen del hecho real en una sola frase explicativa", "fuente": "BOE o INE o Ministerio o similar"}
+            Asegúrate de separar la respuesta normal de la etiqueta [ESTRUCTURA_SHEETS] limpiamente.`;
 
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: promptFinal }] }]
-                    })
+                    body: JSON.stringify({ contents: [{ parts: [{ text: promptFinal }] }] })
                 });
 
                 const data = await response.json();
                 if(data.candidates && data.candidates[0].content.parts[0].text) {
-                    let respuestaIA = data.candidates[0].content.parts[0].text;
-                    textoBox.textContent = respuestaIA;
-                } else {
-                    textoBox.innerHTML = `<span class="text-red-400">Error en el formato de respuesta de la IA. Comprueba si tu clave es correcta.</span>`;
-                }
-            } catch (error) {
-                console.error(error);
-                textoBox.innerHTML = `<span class="text-red-400">Error de conexión con el motor de Google. Revisa tu conexión a internet o tu clave API.</span>`;
-            }
+                    let totalText = data.candidates[0].content.parts[0].text;
+                    
+                    // Separar el texto de campaña del JSON estructurado
+                    const parts = totalText.split('[ESTRUCTURA_SHEETS]');
+                    textoBox.textContent = parts[0].trim();
+
+                    if(parts[1]) {
+                        try {
+                            const jsonFields = JSON.parse(parts[1].trim());
+                            document.getElementById('sheetCat').value = jsonFields.categoria || 'General';
+                            document.getElementById('sheetMito').value = jsonFields.mito || '';
+                            document.getElementById('sheetDato').value = jsonFields.dato || '';
+                            document.getElementById('sheetFuente').value = jsonFields.fuente || 'Oficial';
+                            sheetBox.classList.remove('hidden');
+                        } catch(e) { console.log("No se pudo parsear el JSON de la tarjeta"); }
+                    }
+                } else { textoBox.innerHTML = `<span class="text-red-400">Error en la respuesta de Gemini.</span>`; }
+            } catch (error) { textoBox.innerHTML = `<span class="text-red-400">Error de conexión.</span>`; }
         }
 
-        // GESTIÓN DE AJUSTES EN NAVEGADOR (LOCALSTORAGE)
-        function toggleConfig() {
-            const panel = document.getElementById('configPanel');
-            panel.classList.toggle('hidden');
+        // FUNCIÓN CLAVE: Une los campos usando tabuladores para simular una fila completa de Excel
+        function copiarFilaExcel() {
+            const cat = document.getElementById('sheetCat').value;
+            const mito = document.getElementById('sheetMito').value;
+            const dato = document.getElementById('sheetDato').value;
+            const fuente = document.getElementById('sheetFuente').value;
+
+            // Al separar por '\t' (tabulador), Excel y Google Sheets entienden que cambia de columna
+            const textoFila = `${cat}\t${mito}\t${dato}\t${fuente}`;
+
+            navigator.clipboard.writeText(textoFila).then(() => {
+                alert('✅ ¡Fila copiada al portapapeles! Abre tu Google Sheets, selecciona la casilla de la Categoría vacía y dale a Pegar (Ctrl+V).');
+            }).catch(err => {
+                alert('No se pudo copiar automáticamente. Copia los campos manualmente.');
+            });
         }
 
+        function toggleConfig() { document.getElementById('configPanel').classList.toggle('hidden'); }
         function saveApiKey() {
             const key = document.getElementById('apiKeyInput').value.trim();
-            const status = document.getElementById('configStatus');
-            if(key) {
-                localStorage.setItem('gemini_api_key', key);
-                status.className = "text-xs mt-2 font-medium text-emerald-400";
-                status.textContent = "✅ Clave guardada de forma segura en tu navegador.";
-                setTimeout(() => toggleConfig(), 1500);
-            } else {
-                localStorage.removeItem('gemini_api_key');
-                status.className = "text-xs mt-2 font-medium text-red-400";
-                status.textContent = "Clave eliminada.";
-            }
+            if(key) { localStorage.setItem('gemini_api_key', key); setTimeout(() => toggleConfig(), 1000); } 
+            else { localStorage.removeItem('gemini_api_key'); }
+            checkStoredApiKey();
         }
-
         function checkStoredApiKey() {
             const key = localStorage.getItem('gemini_api_key');
-            if(key) {
-                document.getElementById('apiKeyInput').value = key;
-                document.getElementById('configStatus').className = "text-xs mt-2 font-medium text-emerald-400";
-                document.getElementById('configStatus').textContent = "✅ Clave cargada de forma local.";
-            }
+            if(key) { document.getElementById('apiKeyInput').value = key; document.getElementById('configStatus').textContent = "✅ Clave cargada localmente."; }
         }
     </script>
 </body>
