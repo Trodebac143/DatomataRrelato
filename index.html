@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DatoMataRelato V2.5</title>
+  <title>DatoMataRelato V2.6</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -21,7 +21,7 @@
       <div>
         <div class="flex items-center gap-2">
           <span class="text-2xl sm:text-3xl font-black tracking-tighter text-red-600">Dato<span class="text-slate-100">MataRelato</span></span>
-          <span class="bg-red-950/50 text-red-400 text-[10px] px-2 py-0.5 rounded-full border border-red-900/50 font-mono">v2.5</span>
+          <span class="bg-red-950/50 text-red-400 text-[10px] px-2 py-0.5 rounded-full border border-red-900/50 font-mono">v2.6</span>
         </div>
         <p class="text-xs sm:text-sm text-slate-400 mt-1">Verificación progresista contra bulos y desinformación reaccionaria.</p>
       </div>
@@ -120,8 +120,8 @@ let sessionAI = 0;
 let lastAnswer = '';
 let adminUnlockedUntil = 0;
 const ADMIN_PASSWORD = '2302';
-const SIMILARITY_THRESHOLD = 0.50;
-const WEAK_MATCH_THRESHOLD = 0.42;
+const SIMILARITY_THRESHOLD = 0.78;
+const WEAK_MATCH_THRESHOLD = 0.60;
 
 window.onload = () => {
   loadConfig();
@@ -186,57 +186,75 @@ function normalizeText(text){
     .replace(/\s+/g, ' ')
     .trim();
 }
+
+const STOP_WORDS = new Set([
+  'que','para','por','con','los','las','una','uno','del','como','pero','esta','este','eso','son','han','hay','mas','muy','sin','sus','sobre','todo','todos','todas','porque','cuando','donde','quien','dice','dicen','segun','tambien','entre','desde','hasta','solo','sido','sera','seran','puede','pueden','debe','deben','hacer','hecho','tiene','tienen','pais','espana','gobierno','derecha','izquierda','culpa','actuar','mal','tarde'
+]);
+
+function rawTokens(text){
+  return normalizeText(text).split(' ').filter(w => w.length > 3 && !STOP_WORDS.has(w));
+}
+
 function expandSynonyms(text){
   const t = normalizeText(text);
   const groups = [
     ['ruina','arruinada','arruinado','hunde','hundida','hundido','quiebra','desastre','decadencia','economia','crisis','pib','crecimiento','recesion','empobrece'],
     ['inmigrantes','inmigracion','migrantes','extranjeros','menas','paguitas','ayudas','efecto llamada','regularizacion','fronteras','refugiados'],
-    ['okupas','okupacion','vivienda','alquiler','squatters','desahucios','inquilinos','propietarios','fondos buitre','precio vivienda'],
+    ['okupas','okupacion','vivienda','alquiler','desahucios','inquilinos','propietarios','fondos buitre','precio vivienda'],
     ['paro','empleo','trabajo','afiliacion','temporalidad','fijos discontinuos','smi','salario','salario minimo','contratos','desempleo','autonomos'],
     ['impuestos','fiscalidad','hacienda','irpf','iva','recaudacion','tasas','tributos','sube impuestos','infierno fiscal'],
     ['pensiones','jubilados','mayores','revalorizacion','pensionistas','seguridad social'],
     ['seguridad','delincuencia','criminalidad','robos','violencia','policia','calles','inseguridad'],
     ['feminismo','igualdad','violencia machista','genero','lgtbi','derechos','woke','ideologia de genero'],
-    ['europa','ue','bruselas','comision europea','eurostat','fondos europeos','next generation']
+    ['europa','ue','bruselas','comision europea','eurostat','fondos europeos','next generation'],
+    ['dana','gota fria','inundacion','inundaciones','riada','riadas','valencia','emergencia','emergencias','aemet','proteccion civil','alerta','alertas','victimas','muertes','fallecidos']
   ];
   let extra = [];
   groups.forEach(g => { if(g.some(w => t.includes(w))) extra = extra.concat(g); });
   return t + ' ' + extra.join(' ');
 }
-function tokens(text){
-  const stop = new Set(['que','para','por','con','los','las','una','uno','del','como','pero','esta','este','eso','son','han','hay','mas','muy','sin','sus','sobre','todo','todos','todas','porque','cuando','donde','quien','dice','dicen','segun']);
-  return expandSynonyms(text).split(' ').filter(w => w.length > 3 && !stop.has(w));
-}
-function similarity(a,b){
-  const na = expandSynonyms(a);
-  const nb = expandSynonyms(b);
-  const A = new Set(tokens(na));
-  const B = new Set(tokens(nb));
+
+// Similaridad estricta: se usa para recuperar casos existentes.
+// No expande sinónimos para evitar falsas coincidencias.
+function similarityStrict(a,b){
+  const A = new Set(rawTokens(a));
+  const B = new Set(rawTokens(b));
   if(A.size === 0 || B.size === 0) return 0;
   let inter = 0;
   A.forEach(x => { if(B.has(x)) inter++; });
   const cosine = inter / Math.sqrt(A.size * B.size);
-  const small = A.size <= B.size ? A : B;
-  const coverage = inter / Math.max(1, small.size);
-  const partial = nb.includes(normalizeText(a)) || na.includes(normalizeText(b)) ? 0.18 : 0;
-  return (cosine * 0.7) + (coverage * 0.3) + partial;
+  const coverage = inter / Math.max(1, Math.min(A.size, B.size));
+  const na = normalizeText(a);
+  const nb = normalizeText(b);
+  const partial = (na.length > 18 && nb.includes(na)) || (nb.length > 18 && na.includes(nb)) ? 0.20 : 0;
+  return Math.min(1, (cosine * 0.75) + (coverage * 0.25) + partial);
 }
+
+// Similaridad amplia: solo para ordenar fuentes de apoyo, no para decidir que un caso es el mismo.
+function similarity(a,b){
+  const A = new Set(expandSynonyms(a).split(' ').filter(w => w.length > 3 && !STOP_WORDS.has(w)));
+  const B = new Set(expandSynonyms(b).split(' ').filter(w => w.length > 3 && !STOP_WORDS.has(w)));
+  if(A.size === 0 || B.size === 0) return 0;
+  let inter = 0;
+  A.forEach(x => { if(B.has(x)) inter++; });
+  return inter / Math.sqrt(A.size * B.size);
+}
+
 function searchableCaseText(item){
+  // No incluimos categoría ni respuesta completa: daban falsas coincidencias.
   return [
     item.pregunta_original,
     item.pregunta_normalizada,
     item.narrativa,
     item.tema,
-    item.categoria,
-    item.palabras_clave,
-    item.respuesta_corta
+    item.palabras_clave
   ].filter(Boolean).join(' ');
 }
-
 
 function categoriaProbable(text){
   const t = expandSynonyms(text);
   const rules = [
+    ['Emergencias y protección civil', ['dana','gota fria','inundacion','inundaciones','riada','riadas','emergencia','emergencias','aemet','proteccion civil','alerta','alertas','victimas','muertes','fallecidos','valencia']],
     ['Inmigración', ['inmigrantes','inmigracion','migrantes','extranjeros','menas','fronteras','refugiados','regularizacion','efecto llamada']],
     ['Vivienda', ['vivienda','alquiler','okupas','okupacion','desahucios','inquilinos','propietarios','fondos buitre']],
     ['Empleo', ['paro','empleo','trabajo','afiliacion','temporalidad','fijos discontinuos','smi','salario','contratos']],
@@ -245,14 +263,49 @@ function categoriaProbable(text){
     ['Seguridad', ['seguridad','delincuencia','criminalidad','robos','policia','calles','inseguridad']],
     ['Derechos sociales', ['pensiones','dependencia','sanidad','educacion','servicios publicos','becas','ayudas']],
     ['Igualdad', ['feminismo','igualdad','violencia machista','genero','lgtbi','woke']],
-    ['Unión Europea', ['europa','union europea','ue','bruselas','eurostat','comision europea','fondos europeos']]
+    ['Unión Europea', ['europa','union europea','ue','bruselas','eurostat','comision europea','fondos europeos']],
+    ['Instituciones y democracia', ['constitucion','congreso','senado','investidura','mayoria parlamentaria','legitimidad','ilegitimo','pactos','amnistia','elecciones']]
   ];
   let best = { categoria:'Otro', score:0 };
   for(const [cat, words] of rules){
     const score = words.reduce((acc,w)=> acc + (t.includes(w) ? 1 : 0), 0);
     if(score > best.score) best = { categoria:cat, score };
   }
-  return best.categoria;
+  return best.score > 0 ? best.categoria : 'Otro';
+}
+
+function categoriaCompatible(catPregunta, catCaso){
+  const q = normalizeText(catPregunta);
+  const c = normalizeText(catCaso || '');
+  if(!q || q === 'otro') return true;
+  if(!c || c === 'otro') return false;
+  if(q === c) return true;
+  const grupos = [
+    ['economia','empleo','fiscalidad'],
+    ['derechos sociales','igualdad'],
+    ['instituciones y democracia','union europea']
+  ];
+  return grupos.some(g => g.includes(q) && g.includes(c));
+}
+
+function overlapInfo(pregunta, casoTexto){
+  const A = new Set(rawTokens(pregunta));
+  const B = new Set(rawTokens(casoTexto));
+  let overlap = [];
+  A.forEach(x => { if(B.has(x)) overlap.push(x); });
+  return { total: overlap.length, tokens: overlap };
+}
+
+function esCoincidenciaSegura(pregunta, item, score){
+  const qCat = categoriaProbable(pregunta);
+  const caseText = searchableCaseText(item);
+  const info = overlapInfo(pregunta, caseText);
+  const exact = normalizeText(caseText).includes(normalizeText(pregunta)) || normalizeText(pregunta).includes(normalizeText(item.narrativa || item.pregunta_original || ''));
+
+  if(!categoriaCompatible(qCat, item.categoria)) return false;
+  if(exact && score >= 0.70) return true;
+  if(score >= SIMILARITY_THRESHOLD && info.total >= 2) return true;
+  return false;
 }
 
 async function cargarFuentesRelevantes(pregunta){
@@ -316,7 +369,7 @@ async function procesarConsulta(){
     return;
   }
 
-  showStatus('Un momento, por favor. Buscando información al respecto en fuentes oficiales y preparando una respuesta contrastada...', 'warn');
+  showStatus('No hay una coincidencia suficientemente segura. Un momento, por favor. Buscando información al respecto en fuentes oficiales...', 'warn');
   const fuentesRelevantes = await cargarFuentesRelevantes(pregunta);
   await generarConFuncionSegura(pregunta, fuentesRelevantes);
 }
@@ -327,18 +380,31 @@ async function buscarCasoParecido(pregunta){
     .select('*')
     .order('prioridad', { ascending:false })
     .order('created_at', { ascending:false })
-    .limit(300);
+    .limit(400);
   if(error){ showStatus('Error buscando en Supabase: ' + error.message, 'error'); return null; }
 
   let best = null;
   let bestScore = 0;
   for(const item of data || []){
-    const score = similarity(pregunta, searchableCaseText(item));
-    const boosted = score + Math.min((item.prioridad || 0) * 0.004, 0.05);
+    const caseText = searchableCaseText(item);
+    const score = similarityStrict(pregunta, caseText);
+    const boosted = Math.min(1, score + Math.min((item.prioridad || 0) * 0.002, 0.025));
     if(boosted > bestScore){ bestScore = boosted; best = item; }
   }
-  if(best && bestScore >= SIMILARITY_THRESHOLD){ best._score = bestScore; return best; }
-  if(best && bestScore >= WEAK_MATCH_THRESHOLD){ console.info('Coincidencia débil descartada:', bestScore, best); }
+
+  if(best && esCoincidenciaSegura(pregunta, best, bestScore)){
+    best._score = bestScore;
+    return best;
+  }
+
+  if(best && bestScore >= WEAK_MATCH_THRESHOLD){
+    console.info('Coincidencia posible descartada por seguridad:', {
+      score: bestScore,
+      categoria_pregunta: categoriaProbable(pregunta),
+      categoria_caso: best.categoria,
+      narrativa: best.narrativa || best.pregunta_original
+    });
+  }
   return null;
 }
 async function marcarUso(id, veces){
