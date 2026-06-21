@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DatoMataRelato V2.4</title>
+  <title>DatoMataRelato V2.5</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -21,7 +21,7 @@
       <div>
         <div class="flex items-center gap-2">
           <span class="text-2xl sm:text-3xl font-black tracking-tighter text-red-600">Dato<span class="text-slate-100">MataRelato</span></span>
-          <span class="bg-red-950/50 text-red-400 text-[10px] px-2 py-0.5 rounded-full border border-red-900/50 font-mono">v2.4</span>
+          <span class="bg-red-950/50 text-red-400 text-[10px] px-2 py-0.5 rounded-full border border-red-900/50 font-mono">v2.5</span>
         </div>
         <p class="text-xs sm:text-sm text-slate-400 mt-1">Verificación progresista contra bulos y desinformación reaccionaria.</p>
       </div>
@@ -120,7 +120,8 @@ let sessionAI = 0;
 let lastAnswer = '';
 let adminUnlockedUntil = 0;
 const ADMIN_PASSWORD = '2302';
-const SIMILARITY_THRESHOLD = 0.42;
+const SIMILARITY_THRESHOLD = 0.50;
+const WEAK_MATCH_THRESHOLD = 0.42;
 
 window.onload = () => {
   loadConfig();
@@ -232,6 +233,71 @@ function searchableCaseText(item){
   ].filter(Boolean).join(' ');
 }
 
+
+function categoriaProbable(text){
+  const t = expandSynonyms(text);
+  const rules = [
+    ['Inmigración', ['inmigrantes','inmigracion','migrantes','extranjeros','menas','fronteras','refugiados','regularizacion','efecto llamada']],
+    ['Vivienda', ['vivienda','alquiler','okupas','okupacion','desahucios','inquilinos','propietarios','fondos buitre']],
+    ['Empleo', ['paro','empleo','trabajo','afiliacion','temporalidad','fijos discontinuos','smi','salario','contratos']],
+    ['Economía', ['economia','ruina','pib','inflacion','crecimiento','deuda','deficit','recesion','banco espana','airef']],
+    ['Fiscalidad', ['impuestos','hacienda','irpf','iva','recaudacion','tributos','fiscalidad']],
+    ['Seguridad', ['seguridad','delincuencia','criminalidad','robos','policia','calles','inseguridad']],
+    ['Derechos sociales', ['pensiones','dependencia','sanidad','educacion','servicios publicos','becas','ayudas']],
+    ['Igualdad', ['feminismo','igualdad','violencia machista','genero','lgtbi','woke']],
+    ['Unión Europea', ['europa','union europea','ue','bruselas','eurostat','comision europea','fondos europeos']]
+  ];
+  let best = { categoria:'Otro', score:0 };
+  for(const [cat, words] of rules){
+    const score = words.reduce((acc,w)=> acc + (t.includes(w) ? 1 : 0), 0);
+    if(score > best.score) best = { categoria:cat, score };
+  }
+  return best.categoria;
+}
+
+async function cargarFuentesRelevantes(pregunta){
+  if(!supabaseClient) return [];
+  const categoria = categoriaProbable(pregunta);
+  let query = supabaseClient
+    .from('dmr_sources')
+    .select('titulo,url,tipo,categoria,fiabilidad,resumen,palabras_clave')
+    .eq('activo', true)
+    .order('fiabilidad', { ascending: true })
+    .limit(40);
+
+  // Primero intentamos por categoría. Si falla porque la tabla no existe, seguimos sin romper la app.
+  const { data, error } = await query;
+  if(error){
+    console.warn('No se pudieron cargar fuentes dmr_sources:', error.message);
+    return [];
+  }
+
+  const preguntaNorm = expandSynonyms(pregunta);
+  const scored = (data || []).map(src => {
+    const text = [src.titulo, src.categoria, src.resumen, src.palabras_clave].filter(Boolean).join(' ');
+    let score = similarity(preguntaNorm, text);
+    if(src.categoria && normalizeText(src.categoria) === normalizeText(categoria)) score += 0.25;
+    if(src.tipo === 'oficial') score += 0.20;
+    if(src.fiabilidad === 'alta') score += 0.15;
+    return { ...src, _score: score };
+  }).sort((a,b)=> b._score - a._score);
+
+  return scored.slice(0, 8).map(src => ({
+    titulo: src.titulo,
+    url: src.url,
+    tipo: src.tipo,
+    categoria: src.categoria,
+    fiabilidad: src.fiabilidad,
+    resumen: src.resumen,
+    palabras_clave: src.palabras_clave
+  }));
+}
+
+function resumenFuentes(fuentes){
+  if(!fuentes || !fuentes.length) return 'requiere verificación manual';
+  return fuentes.map(f => f.titulo).filter(Boolean).join('; ');
+}
+
 async function procesarConsulta(){
   const pregunta = document.getElementById('buloInput').value.trim();
   if(!pregunta){ alert('Escribe primero el bulo o argumento.'); return; }
@@ -250,8 +316,9 @@ async function procesarConsulta(){
     return;
   }
 
-  showStatus('No hay coincidencia suficiente. Se usará IA segura y se guardará el caso.', 'warn');
-  await generarConFuncionSegura(pregunta);
+  showStatus('Un momento, por favor. Buscando información al respecto en fuentes oficiales y preparando una respuesta contrastada...', 'warn');
+  const fuentesRelevantes = await cargarFuentesRelevantes(pregunta);
+  await generarConFuncionSegura(pregunta, fuentesRelevantes);
 }
 
 async function buscarCasoParecido(pregunta){
@@ -271,6 +338,7 @@ async function buscarCasoParecido(pregunta){
     if(boosted > bestScore){ bestScore = boosted; best = item; }
   }
   if(best && bestScore >= SIMILARITY_THRESHOLD){ best._score = bestScore; return best; }
+  if(best && bestScore >= WEAK_MATCH_THRESHOLD){ console.info('Coincidencia débil descartada:', bestScore, best); }
   return null;
 }
 async function marcarUso(id, veces){
@@ -287,9 +355,9 @@ function formatearRespuesta(item, pregunta){
   return txt.trim();
 }
 
-async function generarConFuncionSegura(pregunta){
+async function generarConFuncionSegura(pregunta, fuentesRelevantes = []){
   try{
-    const { data, error } = await supabaseClient.functions.invoke('dmr-gemini', { body: { pregunta } });
+    const { data, error } = await supabaseClient.functions.invoke('dmr-gemini', { body: { pregunta, fuentes: fuentesRelevantes } });
     if(error) throw new Error(error.message || 'Error llamando a la función de IA');
     if(!data || !data.respuesta) throw new Error('La función no devolvió una respuesta válida');
 
@@ -300,16 +368,17 @@ async function generarConFuncionSegura(pregunta){
       narrativa: data.narrativa || pregunta,
       respuesta: data.respuesta || '',
       respuesta_corta: data.respuesta_corta || '',
-      fuentes: data.fuentes || 'requiere verificación manual',
+      fuentes: data.fuentes || resumenFuentes(fuentesRelevantes) || 'requiere verificación manual',
       palabras_clave: data.palabras_clave || '',
       tono: 'base',
       modelo_usado: 'gemini-2.5-flash-edge-function',
       estado: data.estado || 'ia_sin_revisar',
       veces_usado: 0,
       prioridad: 0,
-      fuente_principal: data.fuente_principal || data.fuentes || 'requiere verificación manual',
+      fuente_principal: data.fuente_principal || data.fuentes || resumenFuentes(fuentesRelevantes) || 'requiere verificación manual',
       fuente_deteccion: 'consulta_usuario',
-      tipo_caso: 'consulta_ia'
+      tipo_caso: 'consulta_ia',
+      notas_revision: data.notas_revision || 'Generado por IA. Revisar antes de considerarlo verificado.'
     };
 
     const { error: insertError } = await supabaseClient.from('dmr_cases').insert(nuevo);
@@ -318,7 +387,7 @@ async function generarConFuncionSegura(pregunta){
     sessionAI++;
     updateStats();
     mostrarResultado('✨ Respuesta generada y guardada', nuevo.categoria, formatearRespuesta(nuevo, pregunta), nuevo.fuentes);
-    showStatus('Caso nuevo guardado. La próxima vez se podrá reutilizar sin gastar IA.', 'ok');
+    showStatus('Respuesta generada y guardada como pendiente de revisión. La próxima vez podrá reutilizarse, pero conviene revisarla.', 'ok');
     cargarCasos();
   } catch(err){ showStatus('Error: ' + err.message, 'error'); }
 }
