@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DatoMataRelato V2.6</title>
+  <title>DatoMataRelato V2.7</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -21,7 +21,7 @@
       <div>
         <div class="flex items-center gap-2">
           <span class="text-2xl sm:text-3xl font-black tracking-tighter text-red-600">Dato<span class="text-slate-100">MataRelato</span></span>
-          <span class="bg-red-950/50 text-red-400 text-[10px] px-2 py-0.5 rounded-full border border-red-900/50 font-mono">v2.6</span>
+          <span class="bg-red-950/50 text-red-400 text-[10px] px-2 py-0.5 rounded-full border border-red-900/50 font-mono">v2.7</span>
         </div>
         <p class="text-xs sm:text-sm text-slate-400 mt-1">Verificación progresista contra bulos y desinformación reaccionaria.</p>
       </div>
@@ -346,6 +346,42 @@ async function cargarFuentesRelevantes(pregunta){
   }));
 }
 
+
+async function cargarConocimientoRelevante(pregunta){
+  if(!supabaseClient) return [];
+  const categoria = categoriaProbable(pregunta);
+  const { data, error } = await supabaseClient
+    .from('dmr_knowledge')
+    .select('categoria,titulo,contenido,palabras_clave,fuente_principal,fuente_url,prioridad')
+    .eq('activo', true)
+    .limit(120);
+
+  if(error){
+    console.warn('No se pudo cargar dmr_knowledge:', error.message);
+    return [];
+  }
+
+  const preguntaNorm = expandSynonyms(pregunta);
+  const scored = (data || []).map(k => {
+    const text = [k.categoria, k.titulo, k.contenido, k.palabras_clave, k.fuente_principal].filter(Boolean).join(' ');
+    let score = similarity(preguntaNorm, text);
+    if(k.categoria && normalizeText(k.categoria) === normalizeText(categoria)) score += 0.30;
+    if(k.prioridad) score += Math.min(k.prioridad * 0.015, 0.20);
+    return { ...k, _score: score };
+  }).sort((a,b)=> b._score - a._score);
+
+  // Devolvemos pocas fichas: suficientes para orientar a la IA sin saturarla.
+  return scored.filter(k => k._score > 0.04).slice(0, 8).map(k => ({
+    categoria: k.categoria,
+    titulo: k.titulo,
+    contenido: k.contenido,
+    palabras_clave: k.palabras_clave,
+    fuente_principal: k.fuente_principal,
+    fuente_url: k.fuente_url,
+    prioridad: k.prioridad
+  }));
+}
+
 function resumenFuentes(fuentes){
   if(!fuentes || !fuentes.length) return 'requiere verificación manual';
   return fuentes.map(f => f.titulo).filter(Boolean).join('; ');
@@ -369,9 +405,10 @@ async function procesarConsulta(){
     return;
   }
 
-  showStatus('No hay una coincidencia suficientemente segura. Un momento, por favor. Buscando información al respecto en fuentes oficiales...', 'warn');
+  showStatus('No hay una coincidencia suficientemente segura. Un momento, por favor. Buscando información al respecto en fuentes oficiales y marco competencial...', 'warn');
   const fuentesRelevantes = await cargarFuentesRelevantes(pregunta);
-  await generarConFuncionSegura(pregunta, fuentesRelevantes);
+  const conocimientoRelevante = await cargarConocimientoRelevante(pregunta);
+  await generarConFuncionSegura(pregunta, fuentesRelevantes, conocimientoRelevante);
 }
 
 async function buscarCasoParecido(pregunta){
@@ -414,16 +451,25 @@ async function marcarUso(id, veces){
 
 function formatearRespuesta(item, pregunta){
   const afirmacion = pregunta || item.narrativa || item.pregunta_original || 'Afirmación consultada';
-  const respuesta = item.respuesta_corta || item.respuesta || '';
-  const contexto = item.respuesta_corta ? item.respuesta : '';
+  const respuestaCompleta = item.respuesta || '';
+
+  // Si una respuesta IA ya viene estructurada con bloques visuales, no la envolvemos dos veces.
+  if(/❌\s*Afirmación|📌\s*Marco|🏛️|🔎\s*Fuentes/i.test(respuestaCompleta)){
+    return respuestaCompleta.trim();
+  }
+
+  const respuesta = item.respuesta_corta || respuestaCompleta || '';
+  const contexto = item.respuesta_corta ? respuestaCompleta : '';
   let txt = `❌ Afirmación:\n${afirmacion}\n\n✅ Respuesta:\n${respuesta}`;
-  if(contexto && contexto !== respuesta){ txt += `\n\n📊 Contexto:\n${contexto}`; }
+  if(contexto && contexto !== respuesta && !contexto.includes(respuesta.slice(0, 80))){
+    txt += `\n\n📊 Contexto:\n${contexto}`;
+  }
   return txt.trim();
 }
 
-async function generarConFuncionSegura(pregunta, fuentesRelevantes = []){
+async function generarConFuncionSegura(pregunta, fuentesRelevantes = [], conocimientoRelevante = []){
   try{
-    const { data, error } = await supabaseClient.functions.invoke('dmr-gemini', { body: { pregunta, fuentes: fuentesRelevantes } });
+    const { data, error } = await supabaseClient.functions.invoke('dmr-gemini', { body: { pregunta, fuentes: fuentesRelevantes, conocimiento: conocimientoRelevante, categoria_probable: categoriaProbable(pregunta) } });
     if(error) throw new Error(error.message || 'Error llamando a la función de IA');
     if(!data || !data.respuesta) throw new Error('La función no devolvió una respuesta válida');
 
@@ -444,7 +490,7 @@ async function generarConFuncionSegura(pregunta, fuentesRelevantes = []){
       fuente_principal: data.fuente_principal || data.fuentes || resumenFuentes(fuentesRelevantes) || 'requiere verificación manual',
       fuente_deteccion: 'consulta_usuario',
       tipo_caso: 'consulta_ia',
-      notas_revision: data.notas_revision || 'Generado por IA. Revisar antes de considerarlo verificado.'
+      notas_revision: data.notas_revision || 'Generado por IA con fuentes y conocimiento estructural disponibles. Revisar antes de considerarlo verificado.'
     };
 
     const { error: insertError } = await supabaseClient.from('dmr_cases').insert(nuevo);
